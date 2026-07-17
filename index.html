@@ -181,7 +181,7 @@
     let personA, personB, walkGroup;
     let currentView = '3rd';
     let isWalking = false, walkMode = 'sync', walkTime = 0, syncBase = 'A';
-    let rotation = { x: 0, y: 0 }, camDist = 4, isDragging = false, previousTouch = null;
+    let rotation = { x: 0, y: 0 }, camDist = 4, isDragging = false, previousTouch = null, initialPinchDist = null;
 
     function init() {
         scene = new THREE.Scene();
@@ -360,23 +360,54 @@
         window.addEventListener('mouseup', () => isDragging = false);
         window.addEventListener('mousemove', e => { if(isDragging) move(e.movementX, e.movementY); });
 
+        // ホイール操作によるズームのリスナーを登録
+        c.addEventListener('wheel', e => {
+            if (currentView === '3rd') {
+                // 三人称視点：カメラの距離(camDist)を直接増減
+                camDist += e.deltaY * 0.002;
+                camDist = Math.max(0.5, Math.min(10, camDist));
+            }
+        }, { passive: true });
+
         // タッチ操作（スマホ用）のリスナーを登録
         c.addEventListener('touchstart', e => {
-            isDragging = true;
-            previousTouch = e.touches[0];
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousTouch = e.touches[0];
+                initialPinchDist = null;
+            } else if (e.touches.length === 2 && currentView === '3rd') {
+                isDragging = false;
+                initialPinchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
         }, { passive: false });
 
         window.addEventListener('touchend', () => {
             isDragging = false;
+            initialPinchDist = null;
         });
 
         window.addEventListener('touchmove', e => {
-            if(!isDragging || !previousTouch) return;
-            // 3D操作中はブラウザのスクロールを止める
-            if (e.cancelable) e.preventDefault(); 
-            const touch = e.touches[0];
-            move(touch.clientX - previousTouch.clientX, touch.clientY - previousTouch.clientY);
-            previousTouch = touch;
+            if (e.touches.length === 1 && isDragging && previousTouch) {
+                // 3D操作中はブラウザのスクロールを止める
+                if (e.cancelable) e.preventDefault(); 
+                const touch = e.touches[0];
+                move(touch.clientX - previousTouch.clientX, touch.clientY - previousTouch.clientY);
+                previousTouch = touch;
+            } else if (e.touches.length === 2 && initialPinchDist !== null && currentView === '3rd') {
+                if (e.cancelable) e.preventDefault();
+                // ピンチ操作：三人称視点の場合のみ、距離を調整
+                const currentDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const diff = currentDist - initialPinchDist;
+                camDist -= diff * 0.005;
+                camDist = Math.max(0.5, Math.min(10, camDist));
+                initialPinchDist = currentDist;
+            }
         }, { passive: false });
     }
 
