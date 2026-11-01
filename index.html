@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>👣おさんぽシミュレーター</title>
+    <title>👣散步约会模拟器</title>
     <style>
         :root { --panel-width: 300px; }
-        body { margin: 0; font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; background: #ffffff; overflow: hidden; }
+        body { margin: 0; font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif; background: #ffffff; overflow: hidden; }
         
-        /* #ui-panel の更新 */
+        /* #ui-panel 的更新 */
         #ui-panel {
             position: absolute; 
             top: 10px; 
             left: 10px; 
             width: var(--panel-width);
             max-height: calc(100vh - 20px);
-            max-height: calc(100dvh - 20px); /* 可変ビューポート対応 */
+            max-height: calc(100dvh - 20px); /* 适配可变视口 */
             background: rgba(255, 255, 255, 0.95); 
             padding: 15px; 
             padding-bottom: 40px; 
@@ -31,7 +31,7 @@
             box-sizing: border-box;
             transition: all 0.2s ease-out;
         }
-        /* 折りたたんだ（閉じた）時の専用スタイル */
+        /* 折叠（收起）状态的专用样式 */
         #ui-panel.collapsed {
             max-height: none !important;
             padding: 10px 15px !important;
@@ -39,13 +39,13 @@
             width: auto;
             max-width: calc(100vw - 20px);
         }
-        /* 3D表示エリアはブラウザのジェスチャーを無効化して操作を優先 */
+        /* 3D 展示区禁用浏览器手势，优先保证操作 */
         #canvas-container { width: 100vw; height: 100vh; cursor: move; touch-action: none; }
 
         @media screen and (max-width: 480px) { 
             :root { --panel-width: calc(100vw - 20px); }
             #ui-panel { left: 10px; right: 10px; }
-            /* スマホ表示で閉じた場合、右端の固定を解除してタイトルサイズへ収める */
+            /* 手机端收起时解除右端固定，收进标题尺寸 */
             #ui-panel.collapsed { right: auto; }
         }
         
@@ -56,7 +56,7 @@
             .input-group { padding: 8px; margin-bottom: 5px; }
         }
 
-        /* ヘッダーをパネル上部に固定（スクロールしても上に張り付く） */
+        /* 头部固定在面板顶部（滚动时依然吸顶） */
         .panel-header { 
             display: flex; 
             justify-content: space-between; 
@@ -64,8 +64,8 @@
             cursor: pointer; 
             user-select: none; 
             gap: 10px; 
-            position: sticky; /* パネル内スクロール時も上に固定 */
-            top: -15px;       /* padding 分を相殺 */
+            position: sticky; /* 面板内滚动时同样置顶 */
+            top: -15px;       /* 抵消 padding 的高度 */
             background: rgba(255, 255, 255, 0.95);
             padding: 10px 0;
             margin: -15px -15px 10px -15px;
@@ -81,7 +81,7 @@
             background: #eee; 
             padding: 4px 10px; 
             border-radius: 10px; 
-            white-space: nowrap; /* テキストの意図しない改行を防止 */
+            white-space: nowrap; /* 防止文本意外换行 */
         }
         .collapsed #ui-content { display: none; }
 
@@ -90,7 +90,7 @@
             margin: 0; 
             color: #333; 
             font-weight: bold; 
-            white-space: nowrap; /* タイトルの改行を防止 */
+            white-space: nowrap; /* 防止标题换行 */
         }
         .app-description { font-size: 11px; color: #777; margin-top: 8px; margin-bottom: 5px; line-height: 1.5; text-align: center; }
         
@@ -176,72 +176,72 @@
 
 <div id="ui-panel">
     <div class="panel-header" onclick="togglePanel()">
-        <h1 class="app-title">👣おさんぽシミュレーター</h1>
-        <span id="toggle-text">閉じる</span>
+        <h1 class="app-title">👣散步约会模拟器</h1>
+        <span id="toggle-text">收起</span>
     </div>
 
     <div id="ui-content">
-        <p class="app-description">性別と身長から一緒に歩く雰囲気をシミュレーションします。</p>
-        <div class="app-disclaimer">※初期値は日本人の平均値です。歩幅は「身長×0.45」で計算しています。</div>
+        <p class="app-description">可根据性别与身高模拟两人并肩散步的氛围。</p>
+        <div class="app-disclaimer">※初始值为平均值。步幅按“身高×0.45”计算。</div>
         
         <div class="input-group group-a">
             <div class="section-header"><strong>A</strong></div>
             <div class="input-row">
-                <div class="input-item"><span class="hint">名前</span><input type="text" id="nameA" placeholder="名前A" oninput="updateScene()"></div>
-                <div class="input-item" style="flex: 0.6;"><span class="hint">性別</span><select id="genderA" onchange="updateScene()"><option value="male">男</option><option value="female" selected>女</option></select></div>
+                <div class="input-item"><span class="hint">名字</span><input type="text" id="nameA" placeholder="名字A" oninput="updateScene()"></div>
+                <div class="input-item" style="flex: 0.6;"><span class="hint">性别</span><select id="genderA" onchange="updateScene()"><option value="male">男</option><option value="female" selected>女</option></select></div>
             </div>
             <div class="input-row">
-                <div class="input-item"><span class="hint">身長 (cm)</span><input type="number" id="heightA" value="158.0" step="0.1" oninput="updateScene()"></div>
-                <div class="input-item" style="flex: 0.35;"><span class="hint">色</span><input type="color" id="colorA" class="color-picker" value="#ffcc99" oninput="updateScene()"></div>
+                <div class="input-item"><span class="hint">身高 (cm)</span><input type="number" id="heightA" value="158.0" step="0.1" oninput="updateScene()"></div>
+                <div class="input-item" style="flex: 0.35;"><span class="hint">颜色</span><input type="color" id="colorA" class="color-picker" value="#ffcc99" oninput="updateScene()"></div>
             </div>
         </div>
 
         <div class="input-group group-b">
             <div class="section-header"><strong>B</strong></div>
             <div class="input-row">
-                <div class="input-item"><span class="hint">名前</span><input type="text" id="nameB" placeholder="名前B" oninput="updateScene()"></div>
-                <div class="input-item" style="flex: 0.6;"><span class="hint">性別</span><select id="genderB" onchange="updateScene()"><option value="male" selected>男</option><option value="female">女</option></select></div>
+                <div class="input-item"><span class="hint">名字</span><input type="text" id="nameB" placeholder="名字B" oninput="updateScene()"></div>
+                <div class="input-item" style="flex: 0.6;"><span class="hint">性别</span><select id="genderB" onchange="updateScene()"><option value="male" selected>男</option><option value="female">女</option></select></div>
             </div>
             <div class="input-row">
-                <div class="input-item"><span class="hint">身長 (cm)</span><input type="number" id="heightB" value="171.5" step="0.1" oninput="updateScene()"></div>
-                <div class="input-item" style="flex: 0.35;"><span class="hint">色</span><input type="color" id="colorB" class="color-picker" value="#ffad60" oninput="updateScene()"></div>
+                <div class="input-item"><span class="hint">身高 (cm)</span><input type="number" id="heightB" value="171.5" step="0.1" oninput="updateScene()"></div>
+                <div class="input-item" style="flex: 0.35;"><span class="hint">颜色</span><input type="color" id="colorB" class="color-picker" value="#ffad60" oninput="updateScene()"></div>
             </div>
         </div>
 
         <div style="padding: 0 5px;">
             <div class="anim-controls">
-                <button id="btn-play" class="btn-anim" onclick="togglePlay()">⏯ 再生 / 停止</button>
-                <button id="btn-reset" class="btn-anim" onclick="resetAnimation()">🔄 リセット</button>
+                <button id="btn-play" class="btn-anim" onclick="togglePlay()">⏯ 播放 / 停止</button>
+                <button id="btn-reset" class="btn-anim" onclick="resetAnimation()">🔄 重置</button>
             </div>
             <div class="anim-controls">
-                <button id="btn-sync" class="btn-anim active" onclick="setMode('sync')">並んで歩く</button>
-                <button id="btn-free" class="btn-anim" onclick="setMode('free')">それぞれのペース</button>
+                <button id="btn-sync" class="btn-anim active" onclick="setMode('sync')">并肩走</button>
+                <button id="btn-free" class="btn-anim" onclick="setMode('free')">各自步调</button>
             </div>
             <div class="sync-selector" id="sync-selector">
-                <button id="base-a" class="active" onclick="setSyncBase('A')">Aに合わせる</button>
-                <button id="base-b" onclick="setSyncBase('B')">Bに合わせる</button>
+                <button id="base-a" class="active" onclick="setSyncBase('A')">配合 A</button>
+                <button id="base-b" onclick="setSyncBase('B')">配合 B</button>
             </div>
-            <button class="switch-btn" onclick="switchView()">🔄 視点を切り替える</button>
+            <button class="switch-btn" onclick="switchView()">🔄 切换视角</button>
         </div>
         
         <div id="info-container">
             <div class="info-box" id="info"></div>
             <button class="share-btn" onclick="shareToX()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>で結果をシェアする
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg> 分享结果
             </button>
             <div class="other-tools-link">
-                <p style="font-size: 10px; color: #888; margin-bottom: 8px;">こちらもチェック❣🤩</p>
-                <a href="https://qwertyaz111.github.io/my-site-hub/">ツール・シミュレーター一覧</a>
+                <p style="font-size: 10px; color: #888; margin-bottom: 8px;">顺便也看看这些❣🤩</p>
+                <a href="https://qwertyaz111.github.io/my-site-hub/">工具・模拟器合集</a>
             </div>
             <div class="usage-notes">
-                スクショ投稿や加工、トレース等はご自由にお楽しみください。<br>
-                ※営利目的や商用利用はご遠慮ください。
+                截图分享、二次加工、临摹描图等都可以随意使用。<br>
+                ※请勿用于营利、商业用途。
             </div>
         </div>
     </div>
 </div>
 
-<div id="view-label">三人称視点</div>
+<div id="view-label">第三人称视角</div>
 <div class="crosshair" id="crosshair" style="display:none;"></div>
 <div id="canvas-container"></div>
 
@@ -274,14 +274,14 @@
         clock = new THREE.Clock();
         setupControls();
 
-        // 入力フォームからフォーカスが外れた際に、パネルのスクロール位置を上部へリセットする
+        // 输入框失焦时，将面板滚动位置重置回顶部
         document.querySelectorAll('#ui-panel input, #ui-panel select').forEach(element => {
             element.addEventListener('blur', () => {
                 const panel = document.getElementById('ui-panel');
                 if (panel) {
                     panel.scrollTop = 0;
                 }
-                // iOS Safari等の画面全体のズレ防止策
+                // 防止 iOS Safari 等设备上整屏偏移的对策
                 window.scrollTo(0, 0);
             });
         });
@@ -314,7 +314,7 @@
             const panel = document.getElementById('ui-panel');
             const text = document.getElementById('toggle-text');
             panel.classList.toggle('collapsed');
-            text.innerText = panel.classList.contains('collapsed') ? '開く' : '閉じる';
+            text.innerText = panel.classList.contains('collapsed') ? '展开' : '收起';
         };
 
         updateScene();
@@ -388,8 +388,8 @@
         personA.position.set(-0.5, 0, posAZ); personB.position.set(0.5, 0, posBZ); walkGroup.add(personA, personB);
 
         document.getElementById('info').innerHTML = `
-            <div class="info-row"><span class="info-label">📏 身長差</span><span class="info-value">${Math.abs(hA-hB).toFixed(1)}<span class="unit">cm</span></span></div>
-            <div class="info-row"><span class="info-label">👣 歩幅の差</span><span class="info-value">${Math.abs(hA*0.45-hB*0.45).toFixed(1)}<span class="unit">cm</span></span></div>
+            <div class="info-row"><span class="info-label">📏 身高差</span><span class="info-value">${Math.abs(hA-hB).toFixed(1)}<span class="unit">cm</span></span></div>
+            <div class="info-row"><span class="info-label">👣 步幅差</span><span class="info-value">${Math.abs(hA*0.45-hB*0.45).toFixed(1)}<span class="unit">cm</span></span></div>
         `;
     }
 
@@ -411,7 +411,7 @@
         }
 
         if (currentView === '3rd') {
-            // 二人の中心点を計算して回転の基準にする
+            // 计算两人的中心点，作为旋转基准
             const centerX = (personA.position.x + personB.position.x) / 2;
             const centerZ = (personA.position.z + personB.position.z) / 2;
             camera.position.set(centerX + Math.sin(rotation.y) * camDist, 1.5 + Math.sin(rotation.x) * camDist, centerZ + Math.cos(rotation.y) * camDist);
@@ -438,21 +438,21 @@
             if(currentView !== '3rd') rotation.x = Math.max(-1.5, Math.min(1.5, rotation.x));
         };
 
-        // マウス操作のリスナーを登録
+        // 注册鼠标操作的监听器
         c.addEventListener('mousedown', () => isDragging = true);
         window.addEventListener('mouseup', () => isDragging = false);
         window.addEventListener('mousemove', e => { if(isDragging) move(e.movementX, e.movementY); });
 
-        // ホイール操作によるズームのリスナーを登録
+        // 注册滚轮缩放的监听器
         c.addEventListener('wheel', e => {
             if (currentView === '3rd') {
-                // 三人称視点：カメラの距離(camDist)を直接増減
+                // 第三人称视角：直接增减相机距离(camDist)
                 camDist += e.deltaY * 0.002;
                 camDist = Math.max(0.5, Math.min(10, camDist));
             }
         }, { passive: true });
 
-        // タッチ操作（スマホ用）のリスナーを登録
+        // 注册触摸操作（手机端）的监听器
         c.addEventListener('touchstart', e => {
             if (e.touches.length === 1) {
                 isDragging = true;
@@ -474,14 +474,14 @@
 
         window.addEventListener('touchmove', e => {
             if (e.touches.length === 1 && isDragging && previousTouch) {
-                // 3D操作中はブラウザのスクロールを止める
+                // 3D 操作过程中阻止浏览器滚动
                 if (e.cancelable) e.preventDefault(); 
                 const touch = e.touches[0];
                 move(touch.clientX - previousTouch.clientX, touch.clientY - previousTouch.clientY);
                 previousTouch = touch;
             } else if (e.touches.length === 2 && initialPinchDist !== null && currentView === '3rd') {
                 if (e.cancelable) e.preventDefault();
-                // ピンチ操作：三人称視点の場合のみ、距離を調整
+                // 捏合操作：仅在第三人称视角下调整距离
                 const currentDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -501,9 +501,9 @@
         const myName = (currentView === 'A') ? nA : nB;
 
         if (currentView === '3rd') {
-            document.getElementById('view-label').innerText = '三人称視点';
+            document.getElementById('view-label').innerText = '第三人称视角';
         } else {
-            document.getElementById('view-label').innerText = `${myName} の視点`;
+            document.getElementById('view-label').innerText = `${myName} 的视角`;
         }
 
         document.getElementById('crosshair').style.display = currentView === '3rd' ? 'none' : 'block';
@@ -515,11 +515,78 @@
         const nB = document.getElementById('nameB').value || 'B';
         const hA = parseFloat(document.getElementById('heightA').value) || 158.0;
         const hB = parseFloat(document.getElementById('heightB').value) || 171.5;
-        const text = `${nA}(${hA.toFixed(1)}cm)と${nB}(${hB.toFixed(1)}cm)が一緒におさんぽしました！\n#おさんぽシミュレーター\n`;
+        const text = `${nA}（${hA.toFixed(1)}cm）和 ${nB}（${hB.toFixed(1)}cm）一起散步啦！\n#散步约会模拟器\n`;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
     }
 
     init();
+</script>
+
+<script>
+/* 设置持久化：名字・身高・颜色等会记住，刷新后自动恢复 */
+(function () {
+  var KEY = 'simSettings:' + location.pathname;
+  var SKIP = { seek: 1, pVol: 1 };
+  function list() {
+    var els = document.querySelectorAll('input,select,textarea'), out = [], i, el;
+    for (i = 0; i < els.length; i++) {
+      el = els[i];
+      if (el.type === 'file' || el.type === 'button' || el.type === 'submit' || el.type === 'reset') continue;
+      if (el.id && SKIP[el.id]) continue;
+      out.push(el);
+    }
+    return out;
+  }
+  function keyOf(el) {
+    if (el.id) return 'id:' + el.id;
+    var cn = (el.className || '').split(/\s+/)[0];
+    if (!cn) return null;
+    var sibs = document.querySelectorAll(el.tagName.toLowerCase() + '[class~="' + cn + '"]'), i;
+    for (i = 0; i < sibs.length; i++) if (sibs[i] === el) return 'cls:' + cn + ':' + i;
+    return null;
+  }
+  function get(el) {
+    return (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
+  }
+  function set(el, v) {
+    var i;
+    if (el.tagName === 'SELECT') {
+      var ok = false;
+      for (i = 0; i < el.options.length; i++) if (el.options[i].value === v) ok = true;
+      if (!ok) return;
+    }
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!v;
+    else el.value = v;
+  }
+  function fire(el, type) {
+    try { el.dispatchEvent(new Event(type, { bubbles: true })); } catch (e) {}
+  }
+  function restore() {
+    var raw = null, data = null, els, k, i;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return; }
+    if (!raw) return;
+    try { data = JSON.parse(raw); } catch (e) { return; }
+    els = list();
+    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k && data[k] !== undefined) set(els[i], data[k]); }
+    for (i = 0; i < els.length; i++) { fire(els[i], 'input'); fire(els[i], 'change'); }
+    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k && data[k] !== undefined) set(els[i], data[k]); }
+  }
+  var timer = null;
+  function save() {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      var els = list(), data = {}, k, i;
+      for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k) data[k] = get(els[i]); }
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+    }, 200);
+  }
+  document.addEventListener('input', save, true);
+  document.addEventListener('change', save, true);
+  window.addEventListener('load', restore);
+  window.__simSettings = {
+    clear: function () { try { localStorage.removeItem(KEY); } catch (e) {} }
+  };
+})();
 </script>
 </body>
 </html>
