@@ -522,11 +522,17 @@
     init();
 </script>
 
+
 <script>
-/* 设置持久化：名字・身高・颜色等会记住，刷新后自动恢复 */
+/* 设置持久化 v2：本页控件刷新保留，名字・性别・身高・颜色跨模式通用 */
 (function () {
-  var KEY = 'simSettings:' + location.pathname;
+  var PAGE_KEY = 'simSettings:' + location.pathname;
+  var PROFILE_KEY = 'simProfileV1';
   var SKIP = { seek: 1, pVol: 1 };
+  var restoring = false;
+  var dirtyEls = [];
+  var timer = null;
+
   function list() {
     var els = document.querySelectorAll('input,select,textarea'), out = [], i, el;
     for (i = 0; i < els.length; i++) {
@@ -537,21 +543,43 @@
     }
     return out;
   }
+  function classIndex(el, cn) {
+    var sibs = document.querySelectorAll(el.tagName.toLowerCase() + '[class~="' + cn + '"]'), i;
+    for (i = 0; i < sibs.length; i++) if (sibs[i] === el) return i;
+    return -1;
+  }
   function keyOf(el) {
     if (el.id) return 'id:' + el.id;
     var cn = (el.className || '').split(/\s+/)[0];
     if (!cn) return null;
-    var sibs = document.querySelectorAll(el.tagName.toLowerCase() + '[class~="' + cn + '"]'), i;
-    for (i = 0; i < sibs.length; i++) if (sibs[i] === el) return 'cls:' + cn + ':' + i;
+    var idx = classIndex(el, cn);
+    return idx < 0 ? null : 'cls:' + cn + ':' + idx;
+  }
+  /* 名字・性别・身高・角色颜色 → 共享档案的 A / B 槽位 */
+  function slotOf(el) {
+    var m, cn, idx;
+    if (el.id) {
+      if (/^name(Input)?A$/i.test(el.id)) return ['A', 'name'];
+      if (/^name(Input)?B$/i.test(el.id)) return ['B', 'name'];
+      m = /^(gender|height|color)([AB])$/i.exec(el.id);
+      if (m) return [m[2].toUpperCase(), m[1].toLowerCase()];
+      return null;
+    }
+    cn = (el.className || '').split(/\s+/)[0];
+    m = /^(name|gender|height|color)-input$/.exec(cn);
+    if (!m) return null;
+    idx = classIndex(el, cn);
+    if (idx === 0) return ['A', m[1]];
+    if (idx === 1) return ['B', m[1]];
     return null;
   }
   function get(el) {
     return (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
   }
   function set(el, v) {
-    var i;
+    var i, ok;
     if (el.tagName === 'SELECT') {
-      var ok = false;
+      ok = false;
       for (i = 0; i < el.options.length; i++) if (el.options[i].value === v) ok = true;
       if (!ok) return;
     }
@@ -561,30 +589,78 @@
   function fire(el, type) {
     try { el.dispatchEvent(new Event(type, { bubbles: true })); } catch (e) {}
   }
-  function restore() {
-    var raw = null, data = null, els, k, i;
-    try { raw = localStorage.getItem(KEY); } catch (e) { return; }
-    if (!raw) return;
-    try { data = JSON.parse(raw); } catch (e) { return; }
-    els = list();
-    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k && data[k] !== undefined) set(els[i], data[k]); }
+  function readJSON(key) {
+    try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+  }
+  function writeJSON(key, data) {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch (e) {}
+  }
+
+  function applyProfile(prof) {
+    if (!prof) return;
+    var els = list(), i, s;
+    restoring = true;
+    for (i = 0; i < els.length; i++) {
+      s = slotOf(els[i]);
+      if (s && prof[s[0]] && prof[s[0]][s[1]] !== undefined) set(els[i], prof[s[0]][s[1]]);
+    }
     for (i = 0; i < els.length; i++) { fire(els[i], 'input'); fire(els[i], 'change'); }
-    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k && data[k] !== undefined) set(els[i], data[k]); }
+    restoring = false;
+    for (i = 0; i < els.length; i++) {
+      s = slotOf(els[i]);
+      if (s && prof[s[0]] && prof[s[0]][s[1]] !== undefined) set(els[i], prof[s[0]][s[1]]);
+    }
   }
-  var timer = null;
-  function save() {
+
+  function restore() {
+    var els = list(), page = readJSON(PAGE_KEY) || {}, prof = readJSON(PROFILE_KEY) || {}, i, k, s;
+    restoring = true;
+    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k && page[k] !== undefined) set(els[i], page[k]); }
+    for (i = 0; i < els.length; i++) {
+      s = slotOf(els[i]);
+      if (s && prof[s[0]] && prof[s[0]][s[1]] !== undefined) set(els[i], prof[s[0]][s[1]]);
+    }
+    for (i = 0; i < els.length; i++) { fire(els[i], 'input'); fire(els[i], 'change'); }
+    restoring = false;
+    /* 联动控件（如身高→手长、手长→身高）可能在派发事件时改值，这里再校正一次 */
+    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k && page[k] !== undefined) set(els[i], page[k]); }
+    for (i = 0; i < els.length; i++) {
+      s = slotOf(els[i]);
+      if (s && prof[s[0]] && prof[s[0]][s[1]] !== undefined) set(els[i], prof[s[0]][s[1]]);
+    }
+  }
+
+  function flush() {
+    var els = list(), page = {}, prof = readJSON(PROFILE_KEY) || {}, i, k, s, changed = false;
+    for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k) page[k] = get(els[i]); }
+    writeJSON(PAGE_KEY, page);
+    /* 只把本次真正改过的字段写进共享档案，避免用本页默认值覆盖别处设置 */
+    for (i = 0; i < dirtyEls.length; i++) {
+      s = slotOf(dirtyEls[i]);
+      if (!s || !s[0]) continue;
+      prof[s[0]] = prof[s[0]] || {};
+      prof[s[0]][s[1]] = get(dirtyEls[i]);
+      changed = true;
+    }
+    dirtyEls = [];
+    if (changed) writeJSON(PROFILE_KEY, prof);
+  }
+  function queueSave(el) {
+    if (restoring) return;
+    if (el && el.tagName && dirtyEls.indexOf(el) < 0) dirtyEls.push(el);
     if (timer) clearTimeout(timer);
-    timer = setTimeout(function () {
-      var els = list(), data = {}, k, i;
-      for (i = 0; i < els.length; i++) { k = keyOf(els[i]); if (k) data[k] = get(els[i]); }
-      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
-    }, 200);
+    timer = setTimeout(flush, 200);
   }
-  document.addEventListener('input', save, true);
-  document.addEventListener('change', save, true);
+
+  document.addEventListener('input', function (e) { queueSave(e.target); }, true);
+  document.addEventListener('change', function (e) { queueSave(e.target); }, true);
   window.addEventListener('load', restore);
+  window.addEventListener('storage', function (e) {
+    if (e.key === PROFILE_KEY) applyProfile(readJSON(PROFILE_KEY));
+  });
   window.__simSettings = {
-    clear: function () { try { localStorage.removeItem(KEY); } catch (e) {} }
+    clear: function () { try { localStorage.removeItem(PAGE_KEY); } catch (e) {} },
+    clearProfile: function () { try { localStorage.removeItem(PROFILE_KEY); } catch (e) {} }
   };
 })();
 </script>
